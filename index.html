@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Light Spring</title>
+
+<style>
+*{box-sizing:border-box;}
+
+body{
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+margin:0;
+background:#f5f2f1;
+}
+
+.container{
+max-width:900px;
+margin:auto;
+padding:8px 16px 16px;
+}
+
+.header{
+text-align:center;
+margin-bottom:8px;
+}
+
+.logo{
+display:block;
+max-width:220px;
+margin:0 auto 6px;
+}
+
+.header h1{
+font-family:Georgia,serif;
+font-weight:500;
+margin:0;
+}
+
+.grid{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:14px;
+}
+
+.section-title{
+grid-column:1/-1;
+font-size:12px;
+letter-spacing:.15em;
+color:#6d7280;
+margin-top:14px;
+}
+
+.tile{
+aspect-ratio:1;
+border-radius:20px;
+cursor:pointer;
+}
+
+.lightbox{
+position:fixed;
+inset:0;
+display:none;
+z-index:999;
+}
+
+.lightbox.show{
+display:block;
+}
+
+.lightbox-color{
+position:absolute;
+inset:0;
+}
+
+.close-btn{
+position:absolute;
+top:32px;
+right:32px;
+width:36px;
+height:36px;
+border-radius:50%;
+border:none;
+background:rgba(255,255,255,.22);
+color:white;
+font-size:22px;
+display:flex;
+align-items:center;
+justify-content:center;
+backdrop-filter:blur(6px);
+cursor:pointer;
+}
+
+.controls{
+position:absolute;
+top:32px;
+right:84px;
+display:flex;
+gap:8px;
+}
+
+.btn{
+width:36px;
+height:36px;
+border-radius:50%;
+border:none;
+background:rgba(255,255,255,.22);
+color:white;
+font-size:16px;
+display:flex;
+align-items:center;
+justify-content:center;
+backdrop-filter:blur(6px);
+cursor:pointer;
+}
+
+.swipe{
+position:absolute;
+bottom:18px;
+left:50%;
+transform:translateX(-50%);
+color:white;
+letter-spacing:.15em;
+font-size:12px;
+}
+
+@media (max-width:640px){
+.logo{max-width:180px;}
+.grid{gap:12px;}
+.tile{border-radius:18px;}
+
+.close-btn{
+top:28px;
+right:28px;
+}
+
+.controls{
+top:28px;
+right:76px;
+}
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="header">
+<img class="logo" src="logo.png" alt="Shades of Hue logo">
+<h1>Light Spring</h1>
+<div>Tap color • Swipe to browse</div>
+</div>
+
+<div id="grid" class="grid"></div>
+
+</div>
+
+<div id="lightbox" class="lightbox">
+<div id="lightboxColor" class="lightbox-color"></div>
+
+<button id="close" class="close-btn">×</button>
+
+<div class="controls">
+<button id="prev" class="btn">←</button>
+<button id="next" class="btn">→</button>
+</div>
+
+<div class="swipe">SWIPE</div>
+</div>
+
+<script>
+
+const groups = [
+
+{
+title:"LIGHT SPRING NEUTRALS",
+colors:[
+"#FFF7E8",
+"#F6E9D5",
+"#EEDDC1",
+"#E4CFAE",
+"#D8C4A3",
+"#CDB899"
+]
+},
+
+{
+title:"LIGHT PEACH + APRICOT",
+colors:[
+"#F6CBB9",
+"#F5BFA9",
+"#F4B29A",
+"#F2A48C",
+"#F09A84",
+"#EB8F79"
+]
+},
+
+{
+title:"LIGHT CORAL",
+colors:[
+"#F7B2A6",
+"#F6A79B",
+"#F49B8F",
+"#F29085",
+"#EE8479"
+]
+},
+
+{
+title:"BUTTER YELLOW",
+colors:[
+"#FFF4A8",
+"#FDEB8C",
+"#FBE27A",
+"#F8D869",
+"#F6CF5B"
+]
+},
+
+{
+title:"SOFT WARM YELLOW",
+colors:[
+"#F4E2A2",
+"#EED78D",
+"#E8CB77",
+"#E2BF64"
+]
+},
+
+{
+title:"LIGHT GREENS",
+colors:[
+"#D3E7A8",
+"#C4DE96",
+"#B3D784",
+"#A4CF74",
+"#93C664"
+]
+},
+
+{
+title:"SPRING GREENS",
+colors:[
+"#BEEA9D",
+"#9FDF7E",
+"#87D56A",
+"#70CC58",
+"#5BC347"
+]
+},
+
+{
+title:"MINT + SEAFOAM",
+colors:[
+"#C7E7DB",
+"#AEE0D1",
+"#97D9C8",
+"#7FD2BE",
+"#66CBB4"
+]
+},
+
+{
+title:"LIGHT AQUA",
+colors:[
+"#BFE5EA",
+"#A5DBE4",
+"#8FD1DE",
+"#79C7D7",
+"#65BED1"
+]
+},
+
+{
+title:"LIGHT TURQUOISE",
+colors:[
+"#9EDCE0",
+"#84D2D6",
+"#6BC8CC",
+"#52BEC2"
+]
+},
+
+{
+title:"POWDER BLUE",
+colors:[
+"#BFD6F0",
+"#A8C8E8",
+"#92BBE0",
+"#7CADD7"
+]
+},
+
+{
+title:"PERIWINKLE",
+colors:[
+"#B6B6E6",
+"#A6A7DE",
+"#9898D6",
+"#8A8ACC"
+]
+}
+
+];
+
+const grid=document.getElementById("grid");
+const lightbox=document.getElementById("lightbox");
+const lightboxColor=document.getElementById("lightboxColor");
+
+let all=[];
+let index=0;
+let startX=0;
+
+groups.forEach(group=>{
+
+const title=document.createElement("div");
+title.className="section-title";
+title.textContent=group.title;
+grid.appendChild(title);
+
+group.colors.forEach(color=>{
+
+all.push(color);
+
+const tile=document.createElement("div");
+tile.className="tile";
+tile.style.background=color;
+
+tile.onclick=()=>{
+index=all.indexOf(color);
+open();
+};
+
+grid.appendChild(tile);
+
+});
+
+});
+
+function open(){
+lightbox.classList.add("show");
+render();
+}
+
+function render(){
+lightboxColor.style.background=all[index];
+}
+
+function next(){
+index=(index+1)%all.length;
+render();
+}
+
+function prev(){
+index=(index-1+all.length)%all.length;
+render();
+}
+
+document.getElementById("close").onclick=()=>lightbox.classList.remove("show");
+document.getElementById("next").onclick=next;
+document.getElementById("prev").onclick=prev;
+
+lightbox.addEventListener("touchstart",e=>{
+startX=e.touches[0].clientX;
+});
+
+lightbox.addEventListener("touchend",e=>{
+let diff=e.changedTouches[0].clientX-startX;
+if(Math.abs(diff)<40)return;
+diff<0?next():prev();
+});
+
+</script>
+
+</body>
+</html>
